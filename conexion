@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lanzar App - Conectar Billetera</title>
+    <!-- Incluir las bibliotecas necesarias -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3modal@1.9.0/dist/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f2f5;
+            font-family: Arial, sans-serif;
+        }
+        #launchAppButton {
+            padding: 15px 30px;
+            font-size: 18px;
+            color: #fff;
+            background: linear-gradient(90deg, #4CAF50, #2196F3);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        #launchAppButton:hover {
+            transform: scale(1.05);
+            background: linear-gradient(90deg, #2196F3, #4CAF50);
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Botón para conectar la billetera -->
+    <button id="launchAppButton">Lanzar App</button>
+    <p id="status"></p>
+
+    <script>
+        let web3Modal;
+        let provider;
+
+        // Configuración de proveedores para MetaMask y WalletConnect
+        const providerOptions = {
+            walletconnect: {
+                package: WalletConnectProvider.default,
+                options: {
+                    rpc: {
+                        56: "https://bsc-dataseed1.ninicoin.io/" // URL segura para Binance Smart Chain
+                    },
+                    chainId: 56,
+                    bridge: "https://bridge.walletconnect.org"
+                }
+            }
+        };
+
+        // Inicializar Web3Modal
+        function initWeb3Modal() {
+            web3Modal = new Web3Modal.default({
+                cacheProvider: true, // Permitir reconexión automática
+                providerOptions
+            });
+        }
+
+        // Función para conectar la billetera
+        async function connectWallet() {
+            try {
+                provider = await web3Modal.connect();
+
+                // Manejar cambios de cuenta y desconexión
+                provider.on('accountsChanged', (accounts) => {
+                    if (accounts.length === 0) {
+                        document.getElementById('status').textContent = 'Desconectado';
+                    } else {
+                        document.getElementById('status').textContent = `Conectado: ${accounts[0]}`;
+                    }
+                });
+
+                provider.on('disconnect', () => {
+                    document.getElementById('status').textContent = 'Desconectado';
+                });
+
+                const web3 = new Web3(provider);
+                const accounts = await web3.eth.getAccounts();
+                document.getElementById('status').textContent = `Conectado: ${accounts[0]}`;
+                console.log('Conectado a la cuenta:', accounts[0]);
+            } catch (error) {
+                console.error('Error al conectar con la billetera:', error);
+                document.getElementById('status').textContent = 'Error al conectar con la billetera';
+            }
+        }
+
+        // Inicializar y añadir evento al botón
+        window.addEventListener('load', () => {
+            initWeb3Modal();
+            document.getElementById('launchAppButton').addEventListener('click', connectWallet);
+        });
+    </script>
+</body>
+</html>
